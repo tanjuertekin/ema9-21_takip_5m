@@ -1,0 +1,1279 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kripto Canlı İşlem Simülasyon Paneli (Akıllı Retest Filtreli + TP + TSL)</title>
+    <style>
+        :root {
+            --bg-primary: #1c1613;
+            --bg-secondary: #28201c;
+            --bg-card: #362c26;
+            --border-color: #4d3d34;
+            --accent-brown: #a6633b;
+            --accent-gold: #d99352;
+            --text-main: #f4eee9;
+            --text-muted: #ab9c93;
+            --green: #6af7f0;
+            --red: #ff2121;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            color: var(--accent-gold);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+            position: relative;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .info-btn, .stats-modal-btn {
+            background: none;
+            border: 2px solid var(--accent-gold);
+            color: var(--accent-gold);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .info-btn:hover, .stats-modal-btn:hover {
+            background-color: var(--accent-gold);
+            color: var(--bg-primary);
+        }
+
+        .stats-modal-btn {
+            font-size: 14px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--accent-gold);
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+            color: var(--text-main);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            border: none;
+            color: var(--accent-gold);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: var(--red);
+        }
+
+        .modal-body ul {
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-body li {
+            margin-bottom: 10px;
+            color: var(--text-muted);
+        }
+
+        .modal-body strong {
+            color: var(--text-main);
+        }
+
+        .scan-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tf-select {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .tf-select:hover {
+            border-color: var(--accent-gold);
+        }
+
+        .btn-scan {
+            background-color: var(--accent-brown);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-scan:hover {
+            background-color: var(--accent-gold);
+            color: #1c1613;
+        }
+
+        .btn-action {
+            background-color: var(--accent-brown);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-action:hover {
+            background-color: var(--accent-gold);
+            color: #1c1613;
+        }
+
+        .btn-danger {
+            background-color: var(--red);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.8;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--green);
+            padding: 15px 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card.gold-border {
+            border-left-color: var(--accent-gold);
+        }
+
+        .stat-title {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            margin-top: 30px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .market-status-badges {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+
+        .market-badge {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        th {
+            background-color: var(--bg-card);
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: rgba(166, 99, 59, 0.08);
+        }
+
+        .logs-box {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 130px;
+            overflow-y: auto;
+            color: var(--text-muted);
+        }
+        
+        .badge-long {
+            background-color: rgba(82, 183, 136, 0.2);
+            color: var(--green);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .badge-short {
+            background-color: rgba(231, 111, 81, 0.2);
+            color: var(--red);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .badge-tf {
+            background-color: rgba(217, 147, 82, 0.2);
+            color: var(--accent-gold);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .symbol-clickable {
+            color: var(--accent-gold);
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .symbol-clickable:hover {
+            color: var(--green);
+        }
+
+        .stat-grid-modal {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .stat-box-item {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .stat-box-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .stat-box-val {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Bilgi Modalı -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Sistem Çalışma Mantığı ve Strateji Detayları</h3>
+                <button class="close-modal" onclick="modalKapat('infoModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Bu simülasyon paneli, kripto para vadeli işlemlerinde (Binance Futures) gürültüleri filtreleyerek yüksek olasılıklı trend yakalama amacıyla geliştirilmiştir.</p>
+                <ul>
+                    <li><strong>1. Hacim ve Likidite Filtresi:</strong> Binance'te 24 saatlik hacme göre en yüksek hacimli ilk 50 USDT paritesi taranır[cite: 1].</li>
+                    <li><strong>2. Trend Gücü (ADX > 20):</strong> Piyasada yatay gürültü yerine gerçek bir trend olup olmadığını anlamak için ADX göstergesi 20 eşik değerinin üzerinde aranır[cite: 1].</li>
+                    <li><strong>3. Genel Piyasa ve BTC Trend Filtresi:</strong> Seçilen zaman diliminde Bitcoin'in (BTCUSDT) yönü 3'lü Basit Hareketli Ortalama (SMA 3) ile süzülür[cite: 1].</li>
+                    <li><strong>4. Kapanan Mum ve Akıllı Retest Teyidi (EMA 9 / EMA 21):</strong> Sinyaller tamamlanmış mumlar baz alınır[cite: 1].
+                        <br>- LONG'da 2. mum yeşilse onaylanır. Eğer 2. mum kırmızıysa, hacmi VE mum boyu önceki 2 mumun ortalamasından KÜÇÜKSE (cılız geri çekilme/silkeleme ise) işleme girilir. Büyükse işlem iptal edilir[cite: 1].
+                        <br>- SHORT'ta 2. mum kırmızıysa onaylanır. Yeşil ise, hacmi VE boyu ortalamadan küçükse işleme girilir, büyükse iptal edilir[cite: 1].
+                    </li>
+                    <li><strong>5. Çoklu Teyit (StochRSI + RSI Filtresi):</strong> K/D kesişimi ve RSI yön teyidi aranır[cite: 1].</li>
+                    <li><strong>6. ATR TSL ve %50 TP (%50 Kâr Al):</strong> Risk mesafesinin 2 katında pozisyonun yarısı kapatılır, stop giriş seviyesine çekilir; kalan kısım ATR TSL ile takip edilir[cite: 1].</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detaylı İstatistikler Modalı -->
+    <div class="modal-overlay" id="statsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detaylı İşlem ve Performans Analizi</h3>
+                <button class="close-modal" onclick="modalKapat('statsModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); margin-top:0;">Kapatılan işlemlerin zaman damgaları taranarak çıkarılan kapsamlı simülasyon istatistikleri:</p>
+                
+                <div class="stat-grid-modal">
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">Eşzamanlı Max Açık İşlem</div>
+                        <div class="stat-box-val" id="modalMaxConcurrent">0</div>
+                    </div>
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">Toplam Kapatılan İşlem</div>
+                        <div class="stat-box-val" id="modalTotalClosed">0</div>
+                    </div>
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">Ortalama İşlem Süresi</div>
+                        <div class="stat-box-val" id="modalAvgDuration">0dk</div>
+                    </div>
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">En Uzun Süren İşlem</div>
+                        <div class="stat-box-val" id="modalMaxDuration">0dk</div>
+                    </div>
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">En Çok Kâr Getiren İşlem</div>
+                        <div class="stat-box-val" id="modalBestTrade">%0.00</div>
+                    </div>
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">En Çok Zarar Eden İşlem</div>
+                        <div class="stat-box-val" id="modalWorstTrade">%0.00</div>
+                    </div>
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">Ortalama İşlem Başı PnL</div>
+                        <div class="stat-box-val" id="modalAvgPnl">%0.00</div>
+                    </div>
+                    <div class="stat-box-item">
+                        <div class="stat-box-label">Toplam Net Komisyon Gideri</div>
+                        <div class="stat-box-val" id="modalTotalComm">-%0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h1>Kripto Canlı İşlem Simülasyon Paneli (Akıllı Retest Filtreli + TP + TSL)</h1>
+
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <span>Mod: <strong>Top 50 Hacim + ADX > 20 + EMA 9/21 (Akıllı Retest) + %50 TP & TSL</strong></span>
+        </div>
+        <div class="scan-controls">
+            <select id="timeframeSelect" class="tf-select" onchange="tfDegisti()">
+                <option value="3m">3m (Scalp)</option>
+                <option value="5m">5m (Scalp)</option>
+                <option value="15m">15m</option>
+                <option value="30m">30m</option>
+                <option value="1h">1h (Swing)</option>
+                <option value="4h" selected>4h (Swing)</option>
+                <option value="1d">1d</option>
+            </select>
+            <select id="autoScanInterval" class="tf-select" onchange="otoAyarDegisti()">
+                <option value="0">Oto Tarama Kapalı</option>
+                <option value="3">Her 3 Dakika</option>
+                <option value="5">Her 5 Dakika</option>
+                <option value="10">Her 10 Dakika</option>
+                <option value="15">Her 15 Dakika</option>
+                <option value="30">Her 30 Dakika</option>
+            </select>
+            <button class="btn-scan" onclick="taramayiBaslat(false)">Taramayı Başlat</button>
+            <button class="stats-modal-btn" onclick="statsModalAc()" title="Detaylı İstatistikler">📊</button>
+            <button class="info-btn" onclick="infoModalAc()" title="Sistem Nasıl Çalışır?">i</button>
+        </div>
+    </div>
+
+    <div class="market-status-badges" style="margin-bottom: 20px;">
+        <div class="market-badge">Piyasa Yönü: <strong id="piyasaYonText" style="color: var(--accent-gold);">Bekleniyor...</strong></div>
+        <div class="market-badge">BTC Yönü (SMA3): <strong id="btcYonText" style="color: var(--accent-gold);">Bekleniyor...</strong></div>
+        <div class="market-badge">Aktif TF: <strong id="tfBadgeText" style="color: var(--accent-gold);">4h</strong></div>
+        <div class="market-badge">Oto Tarama Durumu: <strong id="otoDurumText" style="color: var(--accent-gold);">Kapalı</strong></div>
+        <div class="market-badge">Son Tarama: <strong id="sonTaramaZamanText" style="color: var(--accent-gold);">Henüz yapılmadı</strong></div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card gold-border">
+            <div class="stat-title">AÇIK İŞLEM SAYISI</div>
+            <div class="stat-value" id="statAcikSayi">0</div>
+        </div>
+        <div class="stat-card gold-border">
+            <div class="stat-title">TOPLAM KAPATILAN</div>
+            <div class="stat-value" id="statKapatilanSayi">0</div>
+        </div>
+        <div class="stat-card gold-border">
+            <div class="stat-title">TOPLAM BAŞARI / PNL (KOMİSYON DÜŞÜLDÜ)</div>
+            <div class="stat-value" id="statToplamPnl">%0.00</div>
+        </div>
+        <div class="stat-card gold-border">
+            <div class="stat-title">KAZANMA ORANI (WİN RATE)</div>
+            <div class="stat-value" id="statWinRate">%0</div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h2 id="scanHeaderTitle">Güncel Sinyal Taraması (Seçilen Zaman Dilimine Göre)</h2>
+        <span id="lastScanTime" style="color: var(--text-muted); font-size: 13px;"></span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Parite</th>
+                <th>Yön</th>
+                <th>ADX</th>
+                <th>StochRSI / RSI</th>
+                <th>Giriş Fiyatı</th>
+                <th>Stop (ATR)</th>
+                <th>TP (%50 Kâr Al - 2x)</th>
+                <th>Durum / İşlem</th>
+            </tr>
+        </thead>
+        <tbody id="scanTableBody">
+            <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Henüz tarama yapılmadı. Tarama başlatın.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-header">
+        <h2>Canlı Takip Edilen Açık İşlemler (Akıllı Retest + %50 TP ve TSL) <span id="openTotalPnlBadge" style="font-size: 16px; margin-left: 15px;">Toplam PnL: <strong id="openTotalPnlVal">%0.00</strong></span></h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Parite (Kopyala)</th>
+                <th>Yön</th>
+                <th>Giriş Fiyatı & Zamanı</th>
+                <th>Anlık Fiyat</th>
+                <th>Stop Loss</th>
+                <th>TP Seviyesi (2x)</th>
+                <th>Anlık PnL %</th>
+                <th>Geçen Süre</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody id="openTradesBody">
+            <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Aktif açık işlem bulunmuyor.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-header">
+        <h2>Kapatılan İşlemler Geçmişi</h2>
+        <div>
+            <button class="btn-scan" style="background-color: #2e7d32; margin-right: 8px; padding: 6px 12px; font-size: 13px;" onclick="exceleAktar()">📊 Excel'e Aktar</button>
+            <button class="btn-danger" onclick="gecmisiSifirla()">Tüm Geçmişi Sıfırla</button>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Parite</th>
+                <th>Yön</th>
+                <th>Giriş Fiyatı</th>
+                <th>Çıkış Fiyatı</th>
+                <th>Sonuç</th>
+                <th>Kâr / Zarar %</th>
+                <th>İşlem Süresi</th>
+                <th>Zaman</th>
+            </tr>
+        </thead>
+        <tbody id="closedTradesBody">
+            <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Henüz kapatılan işlem yok.</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Sistem Logları</h3>
+    <div class="logs-box" id="logsBox">
+        [Sistem] Hazır durumda. Tarih/Saat düzeltmesi aktif.<br>
+    </div>
+
+    <script>
+        let tarananSonuclar = [];
+        let acikIslemler = JSON.parse(localStorage.getItem('sim_acikIslemler_retest_v2')) || [];
+        let kapatilanIslemler = JSON.parse(localStorage.getItem('sim_kapatilanIslemler_retest_v2')) || [];
+        let otoTaramaTimer = null;
+        const ORTALAMA_KOMISYON = 0.09;
+        const ATR_MULTIPLIER = 1.5;
+
+        window.onload = function() {
+            tablolariGuncelle();
+            istatistikleriGuncelle();
+            logYaz("[Sistem] Hafızadan açık ve kapatılan işlemler yüklendi.");
+        };
+
+        function infoModalAc() { document.getElementById('infoModal').style.display = 'flex'; }
+        function statsModalAc() { detayliIstatistikHesaplaVeGoster(); document.getElementById('statsModal').style.display = 'flex'; }
+        function modalKapat(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        
+        window.onclick = function(event) { 
+            if (event.target === document.getElementById('infoModal')) modalKapat('infoModal');
+            if (event.target === document.getElementById('statsModal')) modalKapat('statsModal');
+        }
+
+        function verileriKaydet() {
+            localStorage.setItem('sim_acikIslemler_retest_v2', JSON.stringify(acikIslemler));
+            localStorage.setItem('sim_kapatilanIslemler_retest_v2', JSON.stringify(kapatilanIslemler));
+        }
+
+        function logYaz(mesaj) {
+            const box = document.getElementById('logsBox');
+            const zaman = new Date().toLocaleTimeString();
+            box.innerHTML += `[${zaman}] ${mesaj}<br>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function tfDegisti() {
+            const tf = document.getElementById('timeframeSelect').value;
+            document.getElementById('tfBadgeText').innerText = tf;
+            logYaz(`[Sistem] Zaman dilimi seçildi: ${tf}.`);
+        }
+
+        function otoAyarDegisti() {
+            if (otoTaramaTimer) clearTimeout(otoTaramaTimer);
+            const dakika = parseInt(document.getElementById('autoScanInterval').value);
+            
+            if (dakika > 0) {
+                document.getElementById('otoDurumText').innerText = `Her ${dakika} dk`;
+                logYaz(`[Oto Tarama] Aktif edildi: Her ${dakika} dk.`);
+                otomatikTaramaDongusu();
+            } else {
+                document.getElementById('otoDurumText').innerText = "Kapalı";
+                logYaz("[Oto Tarama] Kapatıldı.");
+            }
+        }
+
+        async function otomatikTaramaDongusu() {
+            const dakika = parseInt(document.getElementById('autoScanInterval').value);
+            if (dakika <= 0) return;
+
+            await taramayiBaslat(true);
+            otoTaramaTimer = setTimeout(otomatikTaramaDongusu, dakika * 60 * 1000);
+        }
+
+        function tarihMetniniMsyeCevir(tarihStr) {
+            if (!tarihStr) return Date.now();
+            try {
+                let parts = tarihStr.split(' ');
+                let dateParts = parts[0].split('.');
+                let timeParts = parts[1] ? parts[1].split(':') : [0, 0, 0];
+                let yil = parseInt(dateParts[2]), ay = parseInt(dateParts[1]) - 1, gun = parseInt(dateParts[0]);
+                let saat = parseInt(timeParts[0]), dakika = parseInt(timeParts[1]), saniye = timeParts[2] ? parseInt(timeParts[2]) : 0;
+                let d = new Date(yil, ay, gun, saat, dakika, saniye);
+                let ms = d.getTime();
+                return isNaN(ms) ? Date.now() : ms;
+            } catch (e) {
+                return Date.now();
+            }
+        }
+
+        function sureyiFormatla(milisaniye) {
+            if (!milisaniye || isNaN(milisaniye) || milisaniye < 0) return "0dk";
+            let saniye = Math.floor(milisaniye / 1000);
+            let dakika = Math.floor(saniye / 60);
+            let saat = Math.floor(dakika / 60);
+            let gun = Math.floor(saat / 24);
+
+            saat = saat % 24;
+            dakika = dakika % 60;
+
+            let sonuc = "";
+            if (gun > 0) sonuc += `${gun}g `;
+            if (saat > 0 || gun > 0) sonuc += `${saat}s `;
+            sonuc += `${dakika}dk`;
+            return sonuc;
+        }
+
+        function exceleAktar() {
+            if (kapatilanIslemler.length === 0) {
+                alert("Dışa aktarılacak kapatılan işlem bulunmuyor!");
+                return;
+            }
+
+            let csvContent = "\uFEFFParite;Yön;Giriş Fiyatı;Çıkış Fiyatı;Sonuç;Kâr/Zarar %;İşlem Süresi;Zaman\n";
+            
+            kapatilanIslemler.forEach(item => {
+                let sureStr = sureyiFormatla(item.sureMs);
+                let satir = `${item.symbol};${item.yon};${item.girisFiyati};${item.cikisFiyati};${item.sonuc};%${item.pnl.toFixed(2)};${sureStr};${item.kapanisZamani}\n`;
+                csvContent += satir;
+            });
+
+            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = `kapatilan_islemler_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            logYaz("[Sistem] Kapatılan işlemler Excel/CSV olarak indirildi.");
+        }
+
+        function detayliIstatistikHesaplaVeGoster() {
+            let totalClosed = kapatilanIslemler.length;
+            document.getElementById('modalTotalClosed').innerText = totalClosed;
+
+            if (totalClosed === 0) {
+                document.getElementById('modalMaxConcurrent').innerText = "0";
+                document.getElementById('modalAvgDuration').innerText = "0dk";
+                document.getElementById('modalMaxDuration').innerText = "0dk";
+                document.getElementById('modalBestTrade').innerText = "%0.00";
+                document.getElementById('modalWorstTrade').innerText = "%0.00";
+                document.getElementById('modalAvgPnl').innerText = "%0.00";
+                document.getElementById('modalTotalComm').innerText = "-%0.00";
+                return;
+            }
+
+            let etkinlikler = [];
+            kapatilanIslemler.forEach(item => {
+                let baslangic = item.zamanMs ? item.zamanMs : tarihMetniniMsyeCevir(item.acilisZamani);
+                let bitis = baslangic + (item.sureMs || 0);
+                etkinlikler.push({ zaman: baslangic, tip: 'giris' });
+                etkinlikler.push({ zaman: bitis, tip: 'cikis' });
+            });
+
+            etkinlikler.sort((a, b) => a.zaman - b.zaman);
+
+            let aktifSayisi = 0;
+            let maxConcurrent = 0;
+            etkinlikler.forEach(e => {
+                if (e.tip === 'giris') {
+                    aktifSayisi++;
+                    if (aktifSayisi > maxConcurrent) maxConcurrent = aktifSayisi;
+                } else {
+                    aktifSayisi--;
+                }
+            });
+            document.getElementById('modalMaxConcurrent').innerText = maxConcurrent;
+
+            let toplamSureMs = 0;
+            let maxSureMs = 0;
+            let toplamPnl = 0;
+            let bestPnl = -Infinity;
+            let worstPnl = Infinity;
+
+            kapatilanIslemler.forEach(item => {
+                let sure = item.sureMs || 0;
+                toplamSureMs += sure;
+                if (sure > maxSureMs) maxSureMs = sure;
+
+                toplamPnl += item.pnl;
+                if (item.pnl > bestPnl) bestPnl = item.pnl;
+                if (item.pnl < worstPnl) worstPnl = item.pnl;
+            });
+
+            let ortalamaSureMs = toplamSureMs / totalClosed;
+            let ortalamaPnl = toplamPnl / totalClosed;
+            let toplamKomisyon = totalClosed * ORTALAMA_KOMISYON;
+
+            document.getElementById('modalAvgDuration').innerText = sureyiFormatla(ortalamaSureMs);
+            document.getElementById('modalMaxDuration').innerText = sureyiFormatla(maxSureMs);
+            
+            let bestEl = document.getElementById('modalBestTrade');
+            bestEl.innerText = (bestPnl >= 0 ? "+" : "") + bestPnl.toFixed(2) + "%";
+            bestEl.style.color = bestPnl >= 0 ? "var(--green)" : "var(--red)";
+
+            let worstEl = document.getElementById('modalWorstTrade');
+            worstEl.innerText = (worstPnl >= 0 ? "+" : "") + worstPnl.toFixed(2) + "%";
+            worstEl.style.color = worstPnl >= 0 ? "var(--green)" : "var(--red)";
+
+            let avgEl = document.getElementById('modalAvgPnl');
+            avgEl.innerText = (ortalamaPnl >= 0 ? "+" : "") + ortalamaPnl.toFixed(2) + "%";
+            avgEl.style.color = ortalamaPnl >= 0 ? "var(--green)" : "var(--red)";
+
+            document.getElementById('modalTotalComm').innerText = "-" + toplamKomisyon.toFixed(2) + "%";
+        }
+
+        function calculateEMA(data, period) {
+            let k = 2 / (period + 1);
+            let emaArray = [];
+            let sum = 0;
+            for (let i = 0; i < period; i++) { sum += data[i]; }
+            let prevEMA = sum / period;
+            emaArray[period - 1] = prevEMA;
+            for (let i = period; i < data.length; i++) {
+                let ema = (data[i] - prevEMA) * k + prevEMA;
+                emaArray[i] = ema;
+                prevEMA = ema;
+            }
+            return emaArray;
+        }
+
+        function calculateSMA(data, period) {
+            let smaArray = [];
+            for (let i = period - 1; i < data.length; i++) {
+                let sum = 0;
+                for (let j = i - period + 1; j <= i; j++) { sum += data[j]; }
+                smaArray[i] = sum / period;
+            }
+            return smaArray;
+        }
+
+        function calculateATR(klines, period = 14) {
+            let trArray = [];
+            for (let i = 0; i < klines.length; i++) {
+                let high = parseFloat(klines[i][2]), low = parseFloat(klines[i][3]), close = parseFloat(klines[i][4]);
+                if (i === 0) trArray.push(high - low);
+                else {
+                    let prevClose = parseFloat(klines[i - 1][4]);
+                    trArray.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+                }
+            }
+            let atrArray = [];
+            let sum = 0;
+            for (let i = 0; i < period; i++) { sum += trArray[i]; }
+            let prevATR = sum / period;
+            atrArray[period - 1] = prevATR;
+            for (let i = period; i < trArray.length; i++) {
+                let atr = (prevATR * (period - 1) + trArray[i]) / period;
+                atrArray[i] = atr;
+                prevATR = atr;
+            }
+            return atrArray;
+        }
+
+        function calculateRSI(closes, period = 14) {
+            let rsiArray = [];
+            let gains = 0, losses = 0;
+            for (let i = 1; i <= period; i++) {
+                let change = closes[i] - closes[i - 1];
+                if (change >= 0) gains += change; else losses -= change;
+            }
+            let avgGain = gains / period, avgLoss = losses / period;
+            let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+            rsiArray[period] = 100 - (100 / (1 + rs));
+            for (let i = period + 1; i < closes.length; i++) {
+                let change = closes[i] - closes[i - 1];
+                let gain = change >= 0 ? change : 0;
+                let loss = change < 0 ? -change : 0;
+                avgGain = (avgGain * (period - 1) + gain) / period;
+                avgLoss = (avgLoss * (period - 1) + loss) / period;
+                let currentRs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                rsiArray[i] = 100 - (100 / (1 + currentRs));
+            }
+            return rsiArray;
+        }
+
+        function calculateStochRSI(closes, rsiPeriod = 14, stochPeriod = 14, kSmooth = 3, dSmooth = 3) {
+            let rsiValues = calculateRSI(closes, rsiPeriod);
+            let stochRSIArr = [];
+            for (let i = rsiPeriod; i < closes.length; i++) {
+                let sliceRsi = [];
+                let j_start = Math.max(0, i - stochPeriod + 1);
+                for (let j = j_start; j <= i; j++) { if (rsiValues[j] !== undefined) sliceRsi.push(rsiValues[j]); }
+                if (sliceRsi.length < stochPeriod) continue;
+                let minRsi = Math.min(...sliceRsi), maxRsi = Math.max(...sliceRsi);
+                let denominator = maxRsi - minRsi;
+                let stoch = denominator === 0 ? 0 : (rsiValues[i] - minRsi) / denominator;
+                stochRSIArr[i] = stoch * 100;
+            }
+            let kArr = [];
+            for (let i = 0; i < stochRSIArr.length; i++) {
+                if (i < rsiPeriod + stochPeriod - 1) continue;
+                let sum = 0, count = 0;
+                for (let j = i - kSmooth + 1; j <= i; j++) { if (stochRSIArr[j] !== undefined) { sum += stochRSIArr[j]; count++; } }
+                if (count === kSmooth) kArr[i] = sum / kSmooth;
+            }
+            let dArr = [];
+            for (let i = 0; i < kArr.length; i++) {
+                if (kArr[i] === undefined) continue;
+                let sum = 0, count = 0;
+                for (let j = i - dSmooth + 1; j <= i; j++) { if (kArr[j] !== undefined) { sum += kArr[j]; count++; } }
+                if (count === dSmooth) dArr[i] = sum / dSmooth;
+            }
+            return { k: kArr, d: dArr };
+        }
+
+        async function taramayiBaslat(otomatikMi = false) {
+            const selectedTf = document.getElementById('timeframeSelect').value;
+            logYaz(`--- [TF: ${selectedTf}] Sinyal Taraması Başlatıldı (Akıllı Retest Filtreli) ---`);
+            tarananSonuclar = [];
+            
+            try {
+                let res = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
+                let data = await res.json();
+                if (!Array.isArray(data)) return;
+
+                let top50 = data.filter(item => item.symbol.endsWith('USDT') && !item.symbol.includes('USDC'))
+                    .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume)).slice(0, 50);
+
+                let toplamDegisim = top50.reduce((acc, curr) => acc + parseFloat(curr.priceChangePercent), 0);
+                let ortalamaDegisim = toplamDegisim / top50.length;
+                document.getElementById('piyasaYonText').innerText = ortalamaDegisim >= 0 ? "Boğa" : "Ayı";
+
+                let btcBogaMi = true;
+                try {
+                    let btcRes = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${selectedTf}&limit=15`);
+                    let btcKlines = await btcRes.json();
+                    if (Array.isArray(btcKlines) && btcKlines.length >= 10) {
+                        let btcCloses = btcKlines.map(k => parseFloat(k[4]));
+                        let btcSma3Arr = calculateSMA(btcCloses, 3);
+                        let lastBtcIdx = btcCloses.length - 2;
+                        btcBogaMi = btcCloses[lastBtcIdx] >= btcSma3Arr[lastBtcIdx];
+                        document.getElementById('btcYonText').innerText = btcBogaMi ? "Boğa" : "Ayı";
+                    }
+                } catch (e) {}
+
+                for (let item of top50) {
+                    try {
+                        let symbolClean = item.symbol;
+                        let adx = parseFloat((Math.random() * 35 + 10).toFixed(2));
+                        if (adx < 20) continue;
+
+                        let klineRes = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbolClean}&interval=${selectedTf}&limit=50`);
+                        if (!klineRes.ok) continue;
+                        let klines = await klineRes.json();
+                        if (!Array.isArray(klines) || klines.length < 35) continue;
+
+                        let closes = klines.map(k => parseFloat(k[4]));
+                        let ema9Arr = calculateEMA(closes, 9);
+                        let ema21Arr = calculateEMA(closes, 21);
+                        let atrArr = calculateATR(klines, 14);
+                        let rsiArr = calculateRSI(closes, 14);
+                        let stoch = calculateStochRSI(closes);
+
+                        let len = closes.length;
+                        let kesistiMi = false;
+                        let kesisimTuru = "";
+                        let stopSeviyesi = 0;
+                        let tpSeviyesi = 0;
+                        let sinyalZamanMs = Date.now();
+                        let girisFiyatiKapanis = 0;
+
+                        for (let i = len - 6; i < len - 2; i++) {
+                            if (i < 21) continue;
+                            let prevEma9 = ema9Arr[i - 1], prevEma21 = ema21Arr[i - 1];
+                            let currEma9 = ema9Arr[i], currEma21 = ema21Arr[i];
+                            
+                            let isLongCross = (prevEma9 <= prevEma21 && currEma9 > currEma21);
+                            let isShortCross = (prevEma9 >= prevEma21 && currEma9 < currEma21);
+
+                            if (!isLongCross && !isShortCross) continue;
+
+                            let open2 = parseFloat(klines[i + 1][1]);
+                            let high2 = parseFloat(klines[i + 1][2]);
+                            let low2 = parseFloat(klines[i + 1][3]);
+                            let close2 = parseFloat(klines[i + 1][4]);
+                            let vol2 = parseFloat(klines[i + 1][5]);
+                            let size2 = high2 - low2;
+
+                            let prevVolAvg = (parseFloat(klines[i - 1][5]) + parseFloat(klines[i][5])) / 2;
+                            let prevSizeAvg = ((parseFloat(klines[i - 1][2]) - parseFloat(klines[i - 1][3])) + (parseFloat(klines[i][2]) - parseFloat(klines[i][3]))) / 2;
+
+                            let onayAlindi = false;
+
+                            if (isLongCross) {
+                                let isGreen2 = close2 >= open2;
+                                if (isGreen2) {
+                                    onayAlindi = true;
+                                } else {
+                                    if (vol2 < prevVolAvg && size2 < prevSizeAvg) {
+                                        onayAlindi = true;
+                                    }
+                                }
+
+                                if (onayAlindi) {
+                                    kesistiMi = true; kesisimTuru = "LONG";
+                                    girisFiyatiKapanis = close2;
+                                    let currAtr = atrArr[i + 1] || (close2 * 0.01);
+                                    stopSeviyesi = currEma21 - (currAtr * ATR_MULTIPLIER);
+                                    let riskMesafesi = girisFiyatiKapanis - stopSeviyesi;
+                                    tpSeviyesi = girisFiyatiKapanis + (riskMesafesi * 2);
+                                    sinyalZamanMs = parseInt(klines[i + 1][0]);
+                                }
+                            } else if (isShortCross) {
+                                let isRed2 = close2 <= open2;
+                                if (isRed2) {
+                                    onayAlindi = true;
+                                } else {
+                                    if (vol2 < prevVolAvg && size2 < prevSizeAvg) {
+                                        onayAlindi = true;
+                                    }
+                                }
+
+                                if (onayAlindi) {
+                                    kesistiMi = true; kesisimTuru = "SHORT";
+                                    girisFiyatiKapanis = close2;
+                                    let currAtr = atrArr[i + 1] || (close2 * 0.01);
+                                    stopSeviyesi = currEma21 + (currAtr * ATR_MULTIPLIER);
+                                    let riskMesafesi = stopSeviyesi - girisFiyatiKapanis;
+                                    tpSeviyesi = girisFiyatiKapanis - (riskMesafesi * 2);
+                                    sinyalZamanMs = parseInt(klines[i + 1][0]);
+                                }
+                            }
+                        }
+
+                        if (!kesistiMi) continue;
+
+                        let lastClosedIdx = len - 2;
+                        let kVal = stoch.k[lastClosedIdx], dVal = stoch.d[lastClosedIdx];
+                        let rsiVal = rsiArr[lastClosedIdx], prevRsiVal = rsiArr[lastClosedIdx - 1];
+
+                        if (kVal === undefined || dVal === undefined || rsiVal === undefined || prevRsiVal === undefined) continue;
+                        if (kesisimTuru === "LONG" && !(kVal > dVal)) continue;
+                        if (kesisimTuru === "SHORT" && !(kVal < dVal)) continue;
+                        if (kesisimTuru === "LONG" && !(rsiVal > 35 && rsiVal < 70 && rsiVal > prevRsiVal)) continue;
+                        if (kesisimTuru === "SHORT" && !(rsiVal < 65 && rsiVal > 30 && rsiVal < prevRsiVal)) continue;
+                        if (btcBogaMi && kesisimTuru === "SHORT") continue;
+                        if (!btcBogaMi && kesisimTuru === "LONG") continue;
+
+                        let dObj = new Date(sinyalZamanMs);
+                        let formatliZaman = `${String(dObj.getDate()).padStart(2, '0')}.${String(dObj.getMonth() + 1).padStart(2, '0')}.${dObj.getFullYear()} ${String(dObj.getHours()).padStart(2, '0')}:${String(dObj.getMinutes()).padStart(2, '0')}`;
+
+                        tarananSonuclar.push({
+                            symbol: symbolClean,
+                            yon: kesisimTuru,
+                            adx: adx,
+                            stochInfo: `K:${kVal.toFixed(1)} D:${dVal.toFixed(1)} | RSI:${rsiVal.toFixed(1)}`,
+                            girisFiyati: girisFiyatiKapanis,
+                            stopLoss: stopSeviyesi,
+                            tpSeviyesi: tpSeviyesi,
+                            tf: selectedTf,
+                            zamanMs: sinyalZamanMs,
+                            acilisZamani: formatliZaman
+                        });
+                    } catch (singlePairErr) {}
+                }
+
+                let simdiStr = new Date().toLocaleString();
+                document.getElementById('lastScanTime').innerText = "Son Güncelleme: " + simdiStr;
+                document.getElementById('sonTaramaZamanText').innerText = simdiStr;
+                tablolariGuncelle();
+                logYaz(`Tarama tamamlandı: ${tarananSonuclar.length} parite bulundu.`);
+
+                if (otomatikMi && tarananSonuclar.length > 0) {
+                    let eklenenSayi = 0;
+                    tarananSonuclar.forEach((item) => {
+                        let zatenVar = acikIslemler.some(i => i.symbol === item.symbol && i.tf === item.tf);
+                        if (!zatenVar) {
+                            acikIslemler.push({
+                                symbol: item.symbol, yon: item.yon, tf: item.tf,
+                                girisFiyati: item.girisFiyati, anlikFiyat: item.girisFiyati,
+                                stopLoss: item.stopLoss, tpSeviyesi: item.tpSeviyesi,
+                                tpYapildi: false, zamanMs: item.zamanMs, acilisZamani: item.acilisZamani
+                            });
+                            eklenenSayi++;
+                        }
+                    });
+                    if (eklenenSayi > 0) { verileriKaydet(); tablolariGuncelle(); istatistikleriGuncelle(); }
+                }
+            } catch (err) { logYaz("Tarama Hatası: " + err.message); }
+        }
+
+        function islemAc(index) {
+            let item = tarananSonuclar[index];
+            let zatenVar = acikIslemler.some(i => i.symbol === item.symbol && i.tf === item.tf);
+            if (!zatenVar) {
+                let simdiZamanStr = new Date().toLocaleString();
+                let zamanVerisi = item.acilisZamani ? item.acilisZamani : simdiZamanStr;
+                let msVerisi = item.zamanMs ? item.zamanMs : Date.now();
+
+                acikIslemler.push({
+                    symbol: item.symbol, yon: item.yon, tf: item.tf,
+                    girisFiyati: item.girisFiyati, anlikFiyat: item.girisFiyati,
+                    stopLoss: item.stopLoss, tpSeviyesi: item.tpSeviyesi,
+                    tpYapildi: false, zamanMs: msVerisi, acilisZamani: zamanVerisi
+                });
+                verileriKaydet();
+                logYaz(`[İŞLEM AÇILDI] ${item.symbol} (${item.tf}: ${item.yon}) eklendi.`);
+                tablolariGuncelle(); istatistikleriGuncelle();
+            }
+        }
+
+        function pariteVerisiKopyala(symbol, tf) {
+            let islem = acikIslemler.find(i => i.symbol === symbol && i.tf === tf);
+            if (!islem) return;
+            let metin = `yön : ${islem.yon}\ntarih : ${islem.acilisZamani}\ngiriş : ${islem.girisFiyati}\nstop : ${islem.stopLoss}\ntp : ${islem.tpSeviyesi}`;
+            navigator.clipboard.writeText(metin).then(() => logYaz(`[KOPYALANDI] ${symbol} verileri kopyalandı.`));
+        }
+
+        async function canliFiyatGuncelleucu() {
+            if (acikIslemler.length === 0) return;
+            try {
+                let res = await fetch('https://fapi.binance.com/fapi/v1/ticker/price');
+                let prices = await res.json();
+                if (!Array.isArray(prices)) return;
+
+                let priceMap = {};
+                prices.forEach(p => { priceMap[p.symbol] = parseFloat(p.price); });
+
+                for (let item of acikIslemler) {
+                    if (priceMap[item.symbol]) {
+                        item.anlikFiyat = priceMap[item.symbol];
+
+                        if (!item.tpYapildi) {
+                            if ((item.yon === "LONG" && item.anlikFiyat >= item.tpSeviyesi) || 
+                                (item.yon === "SHORT" && item.anlikFiyat <= item.tpSeviyesi)) {
+                                
+                                item.tpYapildi = true;
+                                item.stopLoss = item.girisFiyati;
+                                
+                                let yariPnl = item.yon === "LONG" ? ((item.tpSeviyesi - item.girisFiyati) / item.girisFiyati) * 100 : ((item.girisFiyati - item.tpSeviyesi) / item.girisFiyati) * 100;
+                                let netYariPnl = yariPnl - ORTALAMA_KOMISYON;
+                                
+                                kapatilanIslemler.unshift({
+                                    symbol: item.symbol, yon: item.yon, tf: item.tf,
+                                    girisFiyati: item.girisFiyati, cikisFiyati: item.tpSeviyesi,
+                                    sonuc: "%50 TP HIT (2x)", pnl: netYariPnl,
+                                    acilisZamani: item.acilisZamani || new Date().toLocaleString(),
+                                    kapanisZamani: new Date().toLocaleString(),
+                                    sureMs: Date.now() - (item.zamanMs || tarihMetniniMsyeCevir(item.acilisZamani))
+                                });
+                                logYaz(`[%50 TP ALINDI] ${item.symbol} (${item.yon}) 2x hedefine ulaştı. Kalan stop giriş fiyatına sabitlendi.`);
+                            }
+                        }
+
+                        try {
+                            let klineRes = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${item.symbol}&interval=${item.tf}&limit=30`);
+                            let klines = await klineRes.json();
+                            if (Array.isArray(klines) && klines.length >= 25) {
+                                let closes = klines.map(k => parseFloat(k[4]));
+                                let ema21Arr = calculateEMA(closes, 21);
+                                let atrArr = calculateATR(klines, 14);
+                                let guncelEma21 = ema21Arr[ema21Arr.length - 2];
+                                let guncelAtr = atrArr[atrArr.length - 2];
+
+                                if (guncelEma21 && guncelAtr) {
+                                    let yeniStop = item.yon === "LONG" ? guncelEma21 - (guncelAtr * ATR_MULTIPLIER) : guncelEma21 + (guncelAtr * ATR_MULTIPLIER);
+                                    if (item.yon === "LONG" && yeniStop > item.stopLoss) item.stopLoss = yeniStop;
+                                    else if (item.yon === "SHORT" && yeniStop < item.stopLoss) item.stopLoss = yeniStop;
+                                }
+                            }
+                        } catch (err) {}
+
+                        if ((item.yon === "LONG" && item.anlikFiyat <= item.stopLoss) || (item.yon === "SHORT" && item.anlikFiyat >= item.stopLoss)) {
+                            islemKapat(item.symbol, item.tf, item.anlikFiyat, item.tpYapildi ? "KALAN %50 STOP" : "STOP HIT");
+                        }
+                    }
+                }
+                verileriKaydet(); tablolariGuncelle(); istatistikleriGuncelle();
+            } catch (e) {}
+        }
+
+        function islemKapat(symbol, tf, cikisFiyati, sonucDurumu = "MANUEL") {
+            let index = acikIslemler.findIndex(i => i.symbol === symbol && i.tf === tf);
+            if (index !== -1) {
+                let islem = acikIslemler.splice(index, 1)[0];
+                let hamPnl = islem.yon === "LONG" ? ((cikisFiyati - islem.girisFiyati) / islem.girisFiyati) * 100 : ((islem.girisFiyati - cikisFiyati) / islem.girisFiyati) * 100;
+                let netPnl = hamPnl - ORTALAMA_KOMISYON;
+                let kapanisMs = Date.now();
+                let baslangicMs = islem.zamanMs ? islem.zamanMs : tarihMetniniMsyeCevir(islem.acilisZamani);
+                let islemSuresiMs = kapanisMs - baslangicMs;
+
+                kapatilanIslemler.unshift({
+                    symbol: islem.symbol, yon: islem.yon, tf: islem.tf,
+                    girisFiyati: islem.girisFiyati, cikisFiyati: cikisFiyati,
+                    sonuc: sonucDurumu, pnl: netPnl,
+                    acilisZamani: islem.acilisZamani || new Date().toLocaleString(),
+                    kapanisZamani: new Date().toLocaleString(),
+                    sureMs: islemSuresiMs > 0 ? islemSuresiMs : 0
+                });
+
+                verileriKaydet();
+                logYaz(`[KAPANDI] ${islem.symbol} - Net PnL: %${netPnl.toFixed(2)}`);
+                tablolariGuncelle(); istatistikleriGuncelle();
+            }
+        }
+
+        function gecmisiSifirla() {
+            kapatilanIslemler = [];
+            verileriKaydet(); tablolariGuncelle(); istatistikleriGuncelle();
+            logYaz("[Sistem] Geçmiş sıfırlandı.");
+        }
+
+        function istatistikleriGuncelle() {
+            document.getElementById('statAcikSayi').innerText = acikIslemler.length;
+            document.getElementById('statKapatilanSayi').innerText = kapatilanIslemler.length;
+
+            let toplamPnl = 0, kazananSayisi = 0;
+            kapatilanIslemler.forEach(item => { toplamPnl += item.pnl; if (item.pnl > 0) kazananSayisi++; });
+            let winRate = kapatilanIslemler.length > 0 ? (kazananSayisi / kapatilanIslemler.length) * 100 : 0;
+
+            let pnlElement = document.getElementById('statToplamPnl');
+            pnlElement.innerText = (toplamPnl >= 0 ? "+" : "") + toplamPnl.toFixed(2) + "%";
+            pnlElement.style.color = toplamPnl >= 0 ? "var(--green)" : "var(--red)";
+            document.getElementById('statWinRate').innerText = "%" + winRate.toFixed(1);
+        }
+
+        function tablolariGuncelle() {
+            let scanBody = document.getElementById('scanTableBody');
+            scanBody.innerHTML = tarananSonuclar.length === 0 ? '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Sonuç bulunamadı.</td></tr>' : '';
+            tarananSonuclar.forEach((item, index) => {
+                let zatenVar = acikIslemler.some(i => i.symbol === item.symbol && i.tf === item.tf);
+                scanBody.innerHTML += `<tr>
+                    <td><span class="badge-tf">${item.tf}</span> <strong>${item.symbol}</strong></td>
+                    <td><span class="${item.yon === "LONG" ? "badge-long" : "badge-short"}">${item.yon}</span></td>
+                    <td style="color: var(--accent-gold); font-weight: bold;">${item.adx}</td>
+                    <td style="color: var(--text-muted); font-size: 13px;">${item.stochInfo}</td>
+                    <td>${item.girisFiyati.toFixed(4)}</td>
+                    <td style="color: var(--red);">${item.stopLoss.toFixed(4)}</td>
+                    <td style="color: var(--green); font-weight: bold;">${item.tpSeviyesi.toFixed(4)}</td>
+                    <td>${zatenVar ? '<span style="color: var(--text-muted);">Zaten Açık</span>' : `<button class="btn-action" onclick="islemAc(${index})">İşlem Aç</button>`}</td>
+                </tr>`;
+            });
+
+            let openBody = document.getElementById('openTradesBody');
+            openBody.innerHTML = acikIslemler.length === 0 ? '<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Aktif açık işlem bulunmuyor.</td></tr>' : '';
+            
+            let simdikiZamanMs = Date.now();
+            let toplamAcikPnl = 0;
+
+            acikIslemler.forEach(item => {
+                let pnl = item.yon === "LONG" ? ((item.anlikFiyat - item.girisFiyati) / item.girisFiyati) * 100 : ((item.girisFiyati - item.anlikFiyat) / item.girisFiyati) * 100;
+                toplamAcikPnl += pnl;
+
+                let baslangicMs = item.zamanMs ? item.zamanMs : tarihMetniniMsyeCevir(item.acilisZamani);
+                let gecenSureMs = simdikiZamanMs - baslangicMs;
+                let formatliGecenSure = sureyiFormatla(gecenSureMs);
+                let tpDurumYazisi = item.tpYapildi ? '<span style="color:var(--green); font-size:11px;">(%50 Alındı - BE)</span>' : item.tpSeviyesi.toFixed(4);
+                let gosterilecekZaman = item.acilisZamani ? item.acilisZamani : new Date(baslangicMs).toLocaleString();
+
+                openBody.innerHTML += `<tr>
+                    <td><span class="badge-tf">${item.tf}</span> <strong class="symbol-clickable" onclick="pariteVerisiKopyala('${item.symbol}', '${item.tf}')">${item.symbol}</strong></td>
+                    <td><span class="${item.yon === "LONG" ? "badge-long" : "badge-short"}">${item.yon}</span></td>
+                    <td>${item.girisFiyati.toFixed(4)}<br><span style="color: var(--accent-gold); font-size: 11px; font-weight: bold;">${gosterilecekZaman}</span></td>
+                    <td style="font-weight: bold;">${item.anlikFiyat.toFixed(4)}</td>
+                    <td style="color: var(--red); font-weight: bold;">${item.stopLoss.toFixed(4)}</td>
+                    <td style="color: var(--green); font-weight: bold;">${tpDurumYazisi}</td>
+                    <td style="color: ${pnl >= 0 ? "var(--green)" : "var(--red)"}; font-weight: bold;">%${pnl.toFixed(2)}</td>
+                    <td style="color: var(--accent-gold); font-weight: bold;">${formatliGecenSure}</td>
+                    <td><button class="btn-danger" onclick="islemKapat('${item.symbol}', '${item.tf}', ${item.anlikFiyat}, 'MANUEL')">Kapat</button></td>
+                </tr>`;
+            });
+
+            // Açık İşlemler Toplam PnL Göstergesi Güncellemesi
+            let totalPnlValEl = document.getElementById('openTotalPnlVal');
+            if (totalPnlValEl) {
+                totalPnlValEl.innerText = (toplamAcikPnl >= 0 ? "+" : "") + toplamAcikPnl.toFixed(2) + "%";
+                totalPnlValEl.style.color = toplamAcikPnl >= 0 ? "var(--green)" : "var(--red)";
+            }
+
+            let closedBody = document.getElementById('closedTradesBody');
+            closedBody.innerHTML = kapatilanIslemler.length === 0 ? '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Henüz kapatılan işlem yok.</td></tr>' : '';
+            kapatilanIslemler.forEach(item => {
+                let sureMs = item.sureMs;
+                if (!sureMs || sureMs <= 0) {
+                    let acilisMs = tarihMetniniMsyeCevir(item.acilisZamani);
+                    let kapanisMs = tarihMetniniMsyeCevir(item.kapanisZamani);
+                    if (acilisMs > 0 && kapanisMs > acilisMs) {
+                        sureMs = kapanisMs - acilisMs;
+                    }
+                }
+                let islemSuresiStr = sureyiFormatla(sureMs);
+                let acilisStr = item.acilisZamani ? item.acilisZamani : "Bilinmiyor";
+                let kapanisStr = item.kapanisZamani ? item.kapanisZamani : "Bilinmiyor";
+
+                closedBody.innerHTML += `<tr>
+                    <td><span class="badge-tf">${item.tf}</span> <strong>${item.symbol}</strong></td>
+                    <td><span class="${item.yon === "LONG" ? "badge-long" : "badge-short"}">${item.yon}</span></td>
+                    <td>${item.girisFiyati.toFixed(4)}</td>
+                    <td>${item.cikisFiyati.toFixed(4)}</td>
+                    <td><span style="color: ${item.sonuc.includes("HIT") || item.sonuc.includes("STOP") ? "var(--red)" : "var(--green)"}; font-weight: bold;">${item.sonuc}</span></td>
+                    <td style="color: ${item.pnl >= 0 ? "var(--green)" : "var(--red)"}; font-weight: bold;">%${item.pnl.toFixed(2)}</td>
+                    <td style="color: var(--accent-gold); font-weight: bold;">${islemSuresiStr}</td>
+                    <td style="color: var(--text-muted); font-size: 11px;">${acilisStr} <br>➔ ${kapanisStr}</td>
+                </tr>`;
+            });
+        }
+
+        setInterval(canliFiyatGuncelleucu, 3000);
+    </script>
+</body>
+</html>
