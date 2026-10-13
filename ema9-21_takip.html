@@ -465,7 +465,7 @@
         <div class="scan-controls">
             <select id="timeframeSelect" class="tf-select" onchange="tfDegisti()">
                 <option value="3m">3m (Scalp)</option>
-                <option value="5m" selected>5m</option>
+                <option value="5m" selected>5m (Scalp)</option>
                 <option value="15m">15m</option>
                 <option value="30m">30m</option>
                 <option value="1h">1h (Swing)</option>
@@ -490,7 +490,7 @@
         <div class="market-badge">Piyasa Yönü: <strong id="piyasaYonText" style="color: var(--accent-gold);">Bekleniyor...</strong></div>
         <div class="market-badge">BTC Yönü (SMA3): <strong id="btcYonText" style="color: var(--accent-gold);">Bekleniyor...</strong></div>
         <div class="market-badge">Aktif TF: <strong id="tfBadgeText" style="color: var(--accent-gold);">5m</strong></div>
-        <div class="market-badge">Oto Tarama Durumu: <strong id="otoDurumText" style="color: var(--accent-gold);">Kapalı</strong></div>
+        <div class="market-badge">Oto Tarama Durumu: <strong id="otoDurumText" style="color: var(--accent-gold);">Her 3 dk</strong></div>
         <div class="market-badge">Son Tarama: <strong id="sonTaramaZamanText" style="color: var(--accent-gold);">Henüz yapılmadı</strong></div>
     </div>
 
@@ -596,9 +596,17 @@
         const ATR_MULTIPLIER = 1.5;
 
         window.onload = function() {
+            // Seçili TF'yi başlangıçta badge'e yansıt
+            const initialTf = document.getElementById('timeframeSelect').value;
+            document.getElementById('tfBadgeText').innerText = initialTf;
+
             tablolariGuncelle();
             istatistikleriGuncelle();
             logYaz("[Sistem] Hafızadan açık ve kapatılan işlemler yüklendi.");
+            
+            // Sayfa açıldığında otomatik olarak 3 dakikalık taramayı başlat
+            otoAyarDegisti();
+            taramayiBaslat(true);
         };
 
         function infoModalAc() { document.getElementById('infoModal').style.display = 'flex'; }
@@ -1238,7 +1246,6 @@
                 </tr>`;
             });
 
-            // Açık İşlemler Toplam PnL Göstergesi Güncellemesi
             let totalPnlValEl = document.getElementById('openTotalPnlVal');
             if (totalPnlValEl) {
                 totalPnlValEl.innerText = (toplamAcikPnl >= 0 ? "+" : "") + toplamAcikPnl.toFixed(2) + "%";
